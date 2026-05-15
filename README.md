@@ -248,21 +248,21 @@ Instruction memory
 ```
 Data memory
 +------------------------------+
-| 0x0000 : str literal 1 len  |  <- DATA_LITERAL_BASE = 0x0000
-| 0x0001 : str literal 1 [0]  |     pstr: первое слово — длина,
+| 0x0000 : str literal 1 len   |  <- DATA_LITERAL_BASE = 0x0000
+| 0x0001 : str literal 1 [0]   |     pstr: первое слово — длина,
 |    ...                       |     далее символы по одному на слово
-| 0x0400 : variable 1         |  <- DATA_VARIABLE_BASE = 0x0400
-| 0x0401 : variable 2         |
+| 0x0400 : variable 1          |  <- DATA_VARIABLE_BASE = 0x0400
+| 0x0401 : variable 2          |
 |    ...                       |
-| 0x0500 : temp slot 0        |  <- TEMP_BASE = 0x0500 (временные ячейки)
+| 0x0500 : temp slot 0         |  <- TEMP_BASE = 0x0500 (временные ячейки)
 |    ...                       |
-| 0x0580 : ISR temp slot 0    |  <- INT_TEMP_BASE = 0x0580 (временные ISR)
+| 0x0580 : ISR temp slot 0     |  <- INT_TEMP_BASE = 0x0580 (временные ISR)
 |    ...                       |
-| 0x0600 : param slot 0       |  <- PARAM_BASE = 0x0600
+| 0x0600 : param slot 0        |  <- PARAM_BASE = 0x0600
 |    ...                       |
 |          stack (↓)           |  стек растёт вниз (к меньшим адресам)
 | 0x0EFF : первый PUSH         |  = DATA_STACK_TOP - 1
-| 0x0F00 : SP init (пустой)   |  <- DATA_STACK_TOP = 0x0F00
+| 0x0F00 : SP init (пустой)    |  <- DATA_STACK_TOP = 0x0F00
 +------------------------------+
 ```
 
