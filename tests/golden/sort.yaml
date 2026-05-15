@@ -1,0 +1,183 @@
+name: sort
+description: Пузырьковая сортировка 5 чисел, поданных через прерывания.
+source_file: "programs/sort.lisp"
+input_file: "input/sort.txt"
+max_ticks: 50000
+trace_mode: "brief"
+out_lst: |
+  [.text]
+  0x0000 - 40000000 00000010 - JMP 0x0010
+  0x0002 - 00000E00          - NOP
+  0x0010 - 11400000 00000F00 - LOAD SP, #3840
+  0x0012 - 11000000 00000700 - LOAD R0, #1792
+  0x0014 - 12000000 00000400 - STORE [0x0400], R0
+  0x0016 - 11000000 00000005 - LOAD R0, #5
+  0x0018 - 12000000 00000401 - STORE [0x0401], R0
+  0x001A - 11000000 00000000 - LOAD R0, #0
+  0x001C - 12000000 00000402 - STORE [0x0402], R0
+  0x001E - 11000000 00000000 - LOAD R0, #0
+  0x0020 - 12000000 00000403 - STORE [0x0403], R0
+  0x0022 - 70000000          - EI
+  0x0023 - 11000000 00000000 - LOAD R0, #0
+  0x0025 - 11000000 00000000 - LOAD R0, #0
+  0x0027 - 12000000 00000500 - STORE [0x0500], R0
+  0x0029 - 10000000 00000403 - LOAD R0, [0x0403]
+  0x002B - 27000000 00000500 - CMP R0, [0x0500]
+  0x002D - 41000000 00000033 - JZ 0x0033
+  0x002F - 11000000 00000000 - LOAD R0, #0
+  0x0031 - 40000000 00000035 - JMP 0x0035
+  0x0033 - 11000000 00000001 - LOAD R0, #1
+  0x0035 - 28000000 00000000 - CMP R0, #0
+  0x0037 - 41000000 0000003D - JZ 0x003D
+  0x0039 - 11000000 00000000 - LOAD R0, #0
+  0x003B - 40000000 00000025 - JMP 0x0025
+
+  [.data]
+out_output: |
+  7, 13, 25, 42, 100
+out_log: |
+  TICK: 00001  | FETCH1                   | PC: 0001  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0000  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [40000000]            | ACT: FETCH+DECODE word0 -> 0x40000000, need 1 more
+  TICK: 00002  | FETCH2                   | PC: 0002  | OP: JMP 0x0010          | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0000  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [40000000, 00000010]  | ACT: FETCH word1 -> 0x00000010, begin JMP 0x0010
+  TICK: 00003  | EXEC JMP                 | PC: 0010  | OP: JMP 0x0010          | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0000  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: JMP -> 0x0010
+  TICK: 00004  | FETCH1                   | PC: 0011  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0000  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [11400000]            | ACT: FETCH+DECODE word0 -> 0x11400000, need 1 more
+  TICK: 00005  | FETCH2                   | PC: 0012  | OP: LOAD SP, #3840      | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0000  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [11400000, 00000F00]  | ACT: FETCH word1 -> 0x00000F00, begin LOAD SP, #3840
+  TICK: 00006  | EXEC LOAD_IMM            | PC: 0012  | OP: LOAD SP, #3840      | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0000  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg4, #3840
+  TICK: 00007  | FETCH1                   | PC: 0013  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0000  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000]            | ACT: FETCH+DECODE word0 -> 0x11000000, need 1 more
+  TICK: 00008  | FETCH2                   | PC: 0014  | OP: LOAD R0, #1792      | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0000  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000, 00000700]  | ACT: FETCH word1 -> 0x00000700, begin LOAD R0, #1792
+  TICK: 00009  | EXEC LOAD_IMM            | PC: 0014  | OP: LOAD R0, #1792      | R0: 00000700  | R1: 00000000  | SP: 0F00  | MAR: 0000  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, #1792
+  TICK: 00010  | FETCH1                   | PC: 0015  | OP:                     | R0: 00000700  | R1: 00000000  | SP: 0F00  | MAR: 0000  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000]            | ACT: FETCH+DECODE word0 -> 0x12000000, need 1 more
+  TICK: 00011  | FETCH2                   | PC: 0016  | OP: STORE [0x0400], R0  | R0: 00000700  | R1: 00000000  | SP: 0F00  | MAR: 0000  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000, 00000400]  | ACT: FETCH word1 -> 0x00000400, begin STORE [0x0400], R0
+  TICK: 00012  | EXEC STORE_MEM           | PC: 0016  | OP: STORE [0x0400], R0  | R0: 00000700  | R1: 00000000  | SP: 0F00  | MAR: 0400  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: STORE [0x0400], reg0=0x00000700
+  TICK: 00013  | FETCH1                   | PC: 0017  | OP:                     | R0: 00000700  | R1: 00000000  | SP: 0F00  | MAR: 0400  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000]            | ACT: FETCH+DECODE word0 -> 0x11000000, need 1 more
+  TICK: 00014  | FETCH2                   | PC: 0018  | OP: LOAD R0, #5         | R0: 00000700  | R1: 00000000  | SP: 0F00  | MAR: 0400  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000, 00000005]  | ACT: FETCH word1 -> 0x00000005, begin LOAD R0, #5
+  TICK: 00015  | EXEC LOAD_IMM            | PC: 0018  | OP: LOAD R0, #5         | R0: 00000005  | R1: 00000000  | SP: 0F00  | MAR: 0400  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, #5
+  TICK: 00016  | FETCH1                   | PC: 0019  | OP:                     | R0: 00000005  | R1: 00000000  | SP: 0F00  | MAR: 0400  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000]            | ACT: FETCH+DECODE word0 -> 0x12000000, need 1 more
+  TICK: 00017  | FETCH2                   | PC: 001A  | OP: STORE [0x0401], R0  | R0: 00000005  | R1: 00000000  | SP: 0F00  | MAR: 0400  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000, 00000401]  | ACT: FETCH word1 -> 0x00000401, begin STORE [0x0401], R0
+  TICK: 00018  | EXEC STORE_MEM           | PC: 001A  | OP: STORE [0x0401], R0  | R0: 00000005  | R1: 00000000  | SP: 0F00  | MAR: 0401  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: STORE [0x0401], reg0=0x00000005
+  TICK: 00019  | FETCH1                   | PC: 001B  | OP:                     | R0: 00000005  | R1: 00000000  | SP: 0F00  | MAR: 0401  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000]            | ACT: FETCH+DECODE word0 -> 0x11000000, need 1 more
+  TICK: 00020  | FETCH2                   | PC: 001C  | OP: LOAD R0, #0         | R0: 00000005  | R1: 00000000  | SP: 0F00  | MAR: 0401  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000, 00000000]  | ACT: FETCH word1 -> 0x00000000, begin LOAD R0, #0
+  TICK: 00021  | EXEC LOAD_IMM            | PC: 001C  | OP: LOAD R0, #0         | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0401  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, #0
+  TICK: 00022  | FETCH1                   | PC: 001D  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0401  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000]            | ACT: FETCH+DECODE word0 -> 0x12000000, need 1 more
+  TICK: 00023  | FETCH2                   | PC: 001E  | OP: STORE [0x0402], R0  | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0401  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000, 00000402]  | ACT: FETCH word1 -> 0x00000402, begin STORE [0x0402], R0
+  TICK: 00024  | EXEC STORE_MEM           | PC: 001E  | OP: STORE [0x0402], R0  | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0402  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: STORE [0x0402], reg0=0x00000000
+  TICK: 00025  | FETCH1                   | PC: 001F  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0402  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000]            | ACT: FETCH+DECODE word0 -> 0x11000000, need 1 more
+  TICK: 00026  | FETCH2                   | PC: 0020  | OP: LOAD R0, #0         | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0402  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000, 00000000]  | ACT: FETCH word1 -> 0x00000000, begin LOAD R0, #0
+  TICK: 00027  | EXEC LOAD_IMM            | PC: 0020  | OP: LOAD R0, #0         | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0402  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, #0
+  TICK: 00028  | FETCH1                   | PC: 0021  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0402  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000]            | ACT: FETCH+DECODE word0 -> 0x12000000, need 1 more
+  TICK: 00029  | FETCH2                   | PC: 0022  | OP: STORE [0x0403], R0  | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0402  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000, 00000403]  | ACT: FETCH word1 -> 0x00000403, begin STORE [0x0403], R0
+  TICK: 00030  | EXEC STORE_MEM           | PC: 0022  | OP: STORE [0x0403], R0  | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0403  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: STORE [0x0403], reg0=0x00000000
+  SKIPPING LOG...
+  TICK: 01995  | FETCH1                   | PC: 002C  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0403  | Z: 0  | N: 0  | I: 1  | IRQ: 0  | IR: [27000000]            | ACT: FETCH+DECODE word0 -> 0x27000000, need 1 more
+  TICK: 01996  | FETCH2                   | PC: 002D  | OP: CMP R0, [0x0500]    | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0403  | Z: 0  | N: 0  | I: 1  | IRQ: 0  | IR: [27000000, 00000500]  | ACT: FETCH word1 -> 0x00000500, begin CMP R0, [0x0500]
+  TICK: 01997  | EXEC ALU_MEM             | PC: 002D  | OP: CMP R0, [0x0500]    | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 1  | IRQ: 0  | IR: []                    | ACT: CMP_MEM reg0, [0x0500]
+  TICK: 01998  | FETCH1                   | PC: 002E  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 1  | IRQ: 0  | IR: [41000000]            | ACT: FETCH+DECODE word0 -> 0x41000000, need 1 more
+  TICK: 01999  | FETCH2                   | PC: 002F  | OP: JZ 0x0033           | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 1  | IRQ: 0  | IR: [41000000, 00000033]  | ACT: FETCH word1 -> 0x00000033, begin JZ 0x0033
+  TICK: 02000  | INT ACCEPT               | PC: 002D  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 1  | IRQ: 0  | IR: []                    | ACT: INPUT ready: port 0x00 <- 0x2A | [INT] interrupt accepted: restart PC=0x002D
+  TICK: 02001  | INT PUSH_R0              | PC: 002D  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0EFF  | MAR: 0EFF  | Z: 1  | N: 0  | I: 1  | IRQ: 0  | IR: []                    | ACT: [INT] push R0=0x00000000
+  TICK: 02002  | INT PUSH_R1              | PC: 002D  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0EFE  | MAR: 0EFE  | Z: 1  | N: 0  | I: 1  | IRQ: 0  | IR: []                    | ACT: [INT] push R1=0x00000000
+  TICK: 02003  | INT PUSH_PC              | PC: 002D  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0EFD  | MAR: 0EFD  | Z: 1  | N: 0  | I: 1  | IRQ: 0  | IR: []                    | ACT: [INT] push restart PC=0x002D
+  TICK: 02004  | INT PUSH_FLAGS           | PC: 002D  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0EFC  | MAR: 0EFC  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: [INT] push FLAGS=0x05
+  TICK: 02005  | INT VECTOR               | PC: 0E00  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0EFC  | MAR: 0EFC  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: [INT] load vector -> PC=0x0E00
+  TICK: 02006  | INT FETCH1               | PC: 0E01  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0EFC  | MAR: 0EFC  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [60000000]            | ACT: FETCH+DECODE word0 -> 0x60000000, need 1 more
+  TICK: 02007  | INT FETCH2               | PC: 0E02  | OP: IN  port=0x00       | R0: 00000000  | R1: 00000000  | SP: 0EFC  | MAR: 0EFC  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [60000000, 00000000]  | ACT: FETCH word1 -> 0x00000000, begin IN  port=0x00
+  TICK: 02008  | INT EXEC IO              | PC: 0E02  | OP: IN  port=0x00       | R0: 0000002A  | R1: 00000000  | SP: 0EFC  | MAR: 0EFC  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: IN port=0x00 -> reg0=0x2A
+  TICK: 02009  | INT FETCH1               | PC: 0E03  | OP:                     | R0: 0000002A  | R1: 00000000  | SP: 0EFC  | MAR: 0EFC  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000]            | ACT: FETCH+DECODE word0 -> 0x12000000, need 1 more
+  TICK: 02010  | INT FETCH2               | PC: 0E04  | OP: STORE [0x0408], R0  | R0: 0000002A  | R1: 00000000  | SP: 0EFC  | MAR: 0EFC  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000, 00000408]  | ACT: FETCH word1 -> 0x00000408, begin STORE [0x0408], R0
+  TICK: 02011  | INT EXEC STORE_MEM       | PC: 0E04  | OP: STORE [0x0408], R0  | R0: 0000002A  | R1: 00000000  | SP: 0EFC  | MAR: 0408  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: STORE [0x0408], reg0=0x0000002A
+  TICK: 02012  | INT FETCH1               | PC: 0E05  | OP:                     | R0: 0000002A  | R1: 00000000  | SP: 0EFC  | MAR: 0408  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000]            | ACT: FETCH+DECODE word0 -> 0x10000000, need 1 more
+  TICK: 02013  | INT FETCH2               | PC: 0E06  | OP: LOAD R0, [0x0408]   | R0: 0000002A  | R1: 00000000  | SP: 0EFC  | MAR: 0408  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000, 00000408]  | ACT: FETCH word1 -> 0x00000408, begin LOAD R0, [0x0408]
+  TICK: 02014  | INT EXEC LOAD_MEM        | PC: 0E06  | OP: LOAD R0, [0x0408]   | R0: 0000002A  | R1: 00000000  | SP: 0EFC  | MAR: 0408  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, [0x0408]
+  TICK: 02015  | INT FETCH1               | PC: 0E07  | OP:                     | R0: 0000002A  | R1: 00000000  | SP: 0EFC  | MAR: 0408  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000]            | ACT: FETCH+DECODE word0 -> 0x12000000, need 1 more
+  TICK: 02016  | INT FETCH2               | PC: 0E08  | OP: STORE [0x0580], R0  | R0: 0000002A  | R1: 00000000  | SP: 0EFC  | MAR: 0408  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000, 00000580]  | ACT: FETCH word1 -> 0x00000580, begin STORE [0x0580], R0
+  TICK: 02017  | INT EXEC STORE_MEM       | PC: 0E08  | OP: STORE [0x0580], R0  | R0: 0000002A  | R1: 00000000  | SP: 0EFC  | MAR: 0580  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: STORE [0x0580], reg0=0x0000002A
+  TICK: 02018  | INT FETCH1               | PC: 0E09  | OP:                     | R0: 0000002A  | R1: 00000000  | SP: 0EFC  | MAR: 0580  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000]            | ACT: FETCH+DECODE word0 -> 0x10000000, need 1 more
+  TICK: 02019  | INT FETCH2               | PC: 0E0A  | OP: LOAD R0, [0x0402]   | R0: 0000002A  | R1: 00000000  | SP: 0EFC  | MAR: 0580  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000, 00000402]  | ACT: FETCH word1 -> 0x00000402, begin LOAD R0, [0x0402]
+  TICK: 02020  | INT EXEC LOAD_MEM        | PC: 0E0A  | OP: LOAD R0, [0x0402]   | R0: 00000000  | R1: 00000000  | SP: 0EFC  | MAR: 0402  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, [0x0402]
+  TICK: 02021  | INT FETCH1               | PC: 0E0B  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0EFC  | MAR: 0402  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000]            | ACT: FETCH+DECODE word0 -> 0x12000000, need 1 more
+  TICK: 02022  | INT FETCH2               | PC: 0E0C  | OP: STORE [0x0581], R0  | R0: 00000000  | R1: 00000000  | SP: 0EFC  | MAR: 0402  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000, 00000581]  | ACT: FETCH word1 -> 0x00000581, begin STORE [0x0581], R0
+  TICK: 02023  | INT EXEC STORE_MEM       | PC: 0E0C  | OP: STORE [0x0581], R0  | R0: 00000000  | R1: 00000000  | SP: 0EFC  | MAR: 0581  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: STORE [0x0581], reg0=0x00000000
+  TICK: 02024  | INT FETCH1               | PC: 0E0D  | OP:                     | R0: 00000000  | R1: 00000000  | SP: 0EFC  | MAR: 0581  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000]            | ACT: FETCH+DECODE word0 -> 0x10000000, need 1 more
+  TICK: 02025  | INT FETCH2               | PC: 0E0E  | OP: LOAD R0, [0x0400]   | R0: 00000000  | R1: 00000000  | SP: 0EFC  | MAR: 0581  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000, 00000400]  | ACT: FETCH word1 -> 0x00000400, begin LOAD R0, [0x0400]
+  TICK: 02026  | INT EXEC LOAD_MEM        | PC: 0E0E  | OP: LOAD R0, [0x0400]   | R0: 00000700  | R1: 00000000  | SP: 0EFC  | MAR: 0400  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, [0x0400]
+  TICK: 02027  | INT FETCH1               | PC: 0E0F  | OP:                     | R0: 00000700  | R1: 00000000  | SP: 0EFC  | MAR: 0400  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [20000000]            | ACT: FETCH+DECODE word0 -> 0x20000000, need 1 more
+  TICK: 02028  | INT FETCH2               | PC: 0E10  | OP: ADD R0, [0x0581]    | R0: 00000700  | R1: 00000000  | SP: 0EFC  | MAR: 0400  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [20000000, 00000581]  | ACT: FETCH word1 -> 0x00000581, begin ADD R0, [0x0581]
+  TICK: 02029  | INT EXEC ALU_MEM         | PC: 0E10  | OP: ADD R0, [0x0581]    | R0: 00000700  | R1: 00000000  | SP: 0EFC  | MAR: 0581  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: ADD_MEM reg0, [0x0581]
+  TICK: 02030  | INT FETCH1               | PC: 0E11  | OP: MOVE R1, R0         | R0: 00000700  | R1: 00000000  | SP: 0EFC  | MAR: 0581  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [13100000]            | ACT: FETCH+DECODE word0 -> 0x13100000, begin MOVE R1, R0
+  TICK: 02031  | INT EXEC MOVE_REG        | PC: 0E11  | OP: MOVE R1, R0         | R0: 00000700  | R1: 00000700  | SP: 0EFC  | MAR: 0581  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: MOVE reg1, reg0
+  TICK: 02032  | INT FETCH1               | PC: 0E12  | OP:                     | R0: 00000700  | R1: 00000700  | SP: 0EFC  | MAR: 0581  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000]            | ACT: FETCH+DECODE word0 -> 0x10000000, need 1 more
+  TICK: 02033  | INT FETCH2               | PC: 0E13  | OP: LOAD R0, [0x0580]   | R0: 00000700  | R1: 00000700  | SP: 0EFC  | MAR: 0581  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000, 00000580]  | ACT: FETCH word1 -> 0x00000580, begin LOAD R0, [0x0580]
+  TICK: 02034  | INT EXEC LOAD_MEM        | PC: 0E13  | OP: LOAD R0, [0x0580]   | R0: 0000002A  | R1: 00000700  | SP: 0EFC  | MAR: 0580  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, [0x0580]
+  TICK: 02035  | INT FETCH1               | PC: 0E14  | OP: STORE [R1], R0      | R0: 0000002A  | R1: 00000700  | SP: 0EFC  | MAR: 0580  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [15100000]            | ACT: FETCH+DECODE word0 -> 0x15100000, begin STORE [R1], R0
+  TICK: 02036  | INT EXEC STORE_IND       | PC: 0E14  | OP: STORE [R1], R0      | R0: 0000002A  | R1: 00000700  | SP: 0EFC  | MAR: 0700  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: STORE [reg1]=0x0700, reg0=0x0000002A
+  TICK: 02037  | INT FETCH1               | PC: 0E15  | OP:                     | R0: 0000002A  | R1: 00000700  | SP: 0EFC  | MAR: 0700  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000]            | ACT: FETCH+DECODE word0 -> 0x11000000, need 1 more
+  TICK: 02038  | INT FETCH2               | PC: 0E16  | OP: LOAD R0, #1         | R0: 0000002A  | R1: 00000700  | SP: 0EFC  | MAR: 0700  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000, 00000001]  | ACT: FETCH word1 -> 0x00000001, begin LOAD R0, #1
+  TICK: 02039  | INT EXEC LOAD_IMM        | PC: 0E16  | OP: LOAD R0, #1         | R0: 00000001  | R1: 00000700  | SP: 0EFC  | MAR: 0700  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, #1
+  TICK: 02040  | INT FETCH1               | PC: 0E17  | OP:                     | R0: 00000001  | R1: 00000700  | SP: 0EFC  | MAR: 0700  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000]            | ACT: FETCH+DECODE word0 -> 0x12000000, need 1 more
+  TICK: 02041  | INT FETCH2               | PC: 0E18  | OP: STORE [0x0580], R0  | R0: 00000001  | R1: 00000700  | SP: 0EFC  | MAR: 0700  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000, 00000580]  | ACT: FETCH word1 -> 0x00000580, begin STORE [0x0580], R0
+  TICK: 02042  | INT EXEC STORE_MEM       | PC: 0E18  | OP: STORE [0x0580], R0  | R0: 00000001  | R1: 00000700  | SP: 0EFC  | MAR: 0580  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: STORE [0x0580], reg0=0x00000001
+  TICK: 02043  | INT FETCH1               | PC: 0E19  | OP:                     | R0: 00000001  | R1: 00000700  | SP: 0EFC  | MAR: 0580  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000]            | ACT: FETCH+DECODE word0 -> 0x10000000, need 1 more
+  TICK: 02044  | INT FETCH2               | PC: 0E1A  | OP: LOAD R0, [0x0402]   | R0: 00000001  | R1: 00000700  | SP: 0EFC  | MAR: 0580  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000, 00000402]  | ACT: FETCH word1 -> 0x00000402, begin LOAD R0, [0x0402]
+  TICK: 02045  | INT EXEC LOAD_MEM        | PC: 0E1A  | OP: LOAD R0, [0x0402]   | R0: 00000000  | R1: 00000700  | SP: 0EFC  | MAR: 0402  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, [0x0402]
+  TICK: 02046  | INT FETCH1               | PC: 0E1B  | OP:                     | R0: 00000000  | R1: 00000700  | SP: 0EFC  | MAR: 0402  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [20000000]            | ACT: FETCH+DECODE word0 -> 0x20000000, need 1 more
+  TICK: 02047  | INT FETCH2               | PC: 0E1C  | OP: ADD R0, [0x0580]    | R0: 00000000  | R1: 00000700  | SP: 0EFC  | MAR: 0402  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [20000000, 00000580]  | ACT: FETCH word1 -> 0x00000580, begin ADD R0, [0x0580]
+  TICK: 02048  | INT EXEC ALU_MEM         | PC: 0E1C  | OP: ADD R0, [0x0580]    | R0: 00000001  | R1: 00000700  | SP: 0EFC  | MAR: 0580  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: ADD_MEM reg0, [0x0580]
+  TICK: 02049  | INT FETCH1               | PC: 0E1D  | OP:                     | R0: 00000001  | R1: 00000700  | SP: 0EFC  | MAR: 0580  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000]            | ACT: FETCH+DECODE word0 -> 0x12000000, need 1 more
+  TICK: 02050  | INT FETCH2               | PC: 0E1E  | OP: STORE [0x0402], R0  | R0: 00000001  | R1: 00000700  | SP: 0EFC  | MAR: 0580  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000, 00000402]  | ACT: FETCH word1 -> 0x00000402, begin STORE [0x0402], R0
+  TICK: 02051  | INT EXEC STORE_MEM       | PC: 0E1E  | OP: STORE [0x0402], R0  | R0: 00000001  | R1: 00000700  | SP: 0EFC  | MAR: 0402  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: STORE [0x0402], reg0=0x00000001
+  TICK: 02052  | INT FETCH1               | PC: 0E1F  | OP:                     | R0: 00000001  | R1: 00000700  | SP: 0EFC  | MAR: 0402  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000]            | ACT: FETCH+DECODE word0 -> 0x10000000, need 1 more
+  TICK: 02053  | INT FETCH2               | PC: 0E20  | OP: LOAD R0, [0x0401]   | R0: 00000001  | R1: 00000700  | SP: 0EFC  | MAR: 0402  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000, 00000401]  | ACT: FETCH word1 -> 0x00000401, begin LOAD R0, [0x0401]
+  TICK: 02054  | INT EXEC LOAD_MEM        | PC: 0E20  | OP: LOAD R0, [0x0401]   | R0: 00000005  | R1: 00000700  | SP: 0EFC  | MAR: 0401  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, [0x0401]
+  SKIPPING LOG...
+  TICK: 11940  | FETCH1                   | PC: 0145  | OP:                     | R0: 00000001  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000]            | ACT: FETCH+DECODE word0 -> 0x12000000, need 1 more
+  TICK: 11941  | FETCH2                   | PC: 0146  | OP: STORE [0x0500], R0  | R0: 00000001  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000, 00000500]  | ACT: FETCH word1 -> 0x00000500, begin STORE [0x0500], R0
+  TICK: 11942  | EXEC STORE_MEM           | PC: 0146  | OP: STORE [0x0500], R0  | R0: 00000001  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: STORE [0x0500], reg0=0x00000001
+  TICK: 11943  | FETCH1                   | PC: 0147  | OP:                     | R0: 00000001  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000]            | ACT: FETCH+DECODE word0 -> 0x10000000, need 1 more
+  TICK: 11944  | FETCH2                   | PC: 0148  | OP: LOAD R0, [0x0404]   | R0: 00000001  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000, 00000404]  | ACT: FETCH word1 -> 0x00000404, begin LOAD R0, [0x0404]
+  TICK: 11945  | EXEC LOAD_MEM            | PC: 0148  | OP: LOAD R0, [0x0404]   | R0: 00000004  | R1: 00000704  | SP: 0F00  | MAR: 0404  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, [0x0404]
+  TICK: 11946  | FETCH1                   | PC: 0149  | OP:                     | R0: 00000004  | R1: 00000704  | SP: 0F00  | MAR: 0404  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [20000000]            | ACT: FETCH+DECODE word0 -> 0x20000000, need 1 more
+  TICK: 11947  | FETCH2                   | PC: 014A  | OP: ADD R0, [0x0500]    | R0: 00000004  | R1: 00000704  | SP: 0F00  | MAR: 0404  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [20000000, 00000500]  | ACT: FETCH word1 -> 0x00000500, begin ADD R0, [0x0500]
+  TICK: 11948  | EXEC ALU_MEM             | PC: 014A  | OP: ADD R0, [0x0500]    | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: ADD_MEM reg0, [0x0500]
+  TICK: 11949  | FETCH1                   | PC: 014B  | OP:                     | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000]            | ACT: FETCH+DECODE word0 -> 0x12000000, need 1 more
+  TICK: 11950  | FETCH2                   | PC: 014C  | OP: STORE [0x0404], R0  | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000, 00000404]  | ACT: FETCH word1 -> 0x00000404, begin STORE [0x0404], R0
+  TICK: 11951  | EXEC STORE_MEM           | PC: 014C  | OP: STORE [0x0404], R0  | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0404  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: STORE [0x0404], reg0=0x00000005
+  TICK: 11952  | FETCH1                   | PC: 014D  | OP:                     | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0404  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [40000000]            | ACT: FETCH+DECODE word0 -> 0x40000000, need 1 more
+  TICK: 11953  | FETCH2                   | PC: 014E  | OP: JMP 0x00FC          | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0404  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [40000000, 000000FC]  | ACT: FETCH word1 -> 0x000000FC, begin JMP 0x00FC
+  TICK: 11954  | EXEC JMP                 | PC: 00FC  | OP: JMP 0x00FC          | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0404  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: JMP -> 0x00FC
+  TICK: 11955  | FETCH1                   | PC: 00FD  | OP:                     | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0404  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000]            | ACT: FETCH+DECODE word0 -> 0x10000000, need 1 more
+  TICK: 11956  | FETCH2                   | PC: 00FE  | OP: LOAD R0, [0x0401]   | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0404  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000, 00000401]  | ACT: FETCH word1 -> 0x00000401, begin LOAD R0, [0x0401]
+  TICK: 11957  | EXEC LOAD_MEM            | PC: 00FE  | OP: LOAD R0, [0x0401]   | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0401  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, [0x0401]
+  TICK: 11958  | FETCH1                   | PC: 00FF  | OP:                     | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0401  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000]            | ACT: FETCH+DECODE word0 -> 0x12000000, need 1 more
+  TICK: 11959  | FETCH2                   | PC: 0100  | OP: STORE [0x0500], R0  | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0401  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [12000000, 00000500]  | ACT: FETCH word1 -> 0x00000500, begin STORE [0x0500], R0
+  TICK: 11960  | EXEC STORE_MEM           | PC: 0100  | OP: STORE [0x0500], R0  | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: STORE [0x0500], reg0=0x00000005
+  TICK: 11961  | FETCH1                   | PC: 0101  | OP:                     | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000]            | ACT: FETCH+DECODE word0 -> 0x10000000, need 1 more
+  TICK: 11962  | FETCH2                   | PC: 0102  | OP: LOAD R0, [0x0404]   | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [10000000, 00000404]  | ACT: FETCH word1 -> 0x00000404, begin LOAD R0, [0x0404]
+  TICK: 11963  | EXEC LOAD_MEM            | PC: 0102  | OP: LOAD R0, [0x0404]   | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0404  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, [0x0404]
+  TICK: 11964  | FETCH1                   | PC: 0103  | OP:                     | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0404  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [27000000]            | ACT: FETCH+DECODE word0 -> 0x27000000, need 1 more
+  TICK: 11965  | FETCH2                   | PC: 0104  | OP: CMP R0, [0x0500]    | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0404  | Z: 0  | N: 0  | I: 0  | IRQ: 0  | IR: [27000000, 00000500]  | ACT: FETCH word1 -> 0x00000500, begin CMP R0, [0x0500]
+  TICK: 11966  | EXEC ALU_MEM             | PC: 0104  | OP: CMP R0, [0x0500]    | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: CMP_MEM reg0, [0x0500]
+  TICK: 11967  | FETCH1                   | PC: 0105  | OP:                     | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [43000000]            | ACT: FETCH+DECODE word0 -> 0x43000000, need 1 more
+  TICK: 11968  | FETCH2                   | PC: 0106  | OP: JN 0x010A           | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [43000000, 0000010A]  | ACT: FETCH word1 -> 0x0000010A, begin JN 0x010A
+  TICK: 11969  | EXEC BRANCH              | PC: 0106  | OP: JN 0x010A           | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: JN not taken
+  TICK: 11970  | FETCH1                   | PC: 0107  | OP:                     | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000]            | ACT: FETCH+DECODE word0 -> 0x11000000, need 1 more
+  TICK: 11971  | FETCH2                   | PC: 0108  | OP: LOAD R0, #0         | R0: 00000005  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000, 00000000]  | ACT: FETCH word1 -> 0x00000000, begin LOAD R0, #0
+  TICK: 11972  | EXEC LOAD_IMM            | PC: 0108  | OP: LOAD R0, #0         | R0: 00000000  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, #0
+  TICK: 11973  | FETCH1                   | PC: 0109  | OP:                     | R0: 00000000  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [40000000]            | ACT: FETCH+DECODE word0 -> 0x40000000, need 1 more
+  TICK: 11974  | FETCH2                   | PC: 010A  | OP: JMP 0x010C          | R0: 00000000  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [40000000, 0000010C]  | ACT: FETCH word1 -> 0x0000010C, begin JMP 0x010C
+  TICK: 11975  | EXEC JMP                 | PC: 010C  | OP: JMP 0x010C          | R0: 00000000  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: JMP -> 0x010C
+  TICK: 11976  | FETCH1                   | PC: 010D  | OP:                     | R0: 00000000  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [28000000]            | ACT: FETCH+DECODE word0 -> 0x28000000, need 1 more
+  TICK: 11977  | FETCH2                   | PC: 010E  | OP: CMP R0, #0          | R0: 00000000  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [28000000, 00000000]  | ACT: FETCH word1 -> 0x00000000, begin CMP R0, #0
+  TICK: 11978  | EXEC ALU_IMM             | PC: 010E  | OP: CMP R0, #0          | R0: 00000000  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: CMP reg0, #0
+  TICK: 11979  | FETCH1                   | PC: 010F  | OP:                     | R0: 00000000  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [41000000]            | ACT: FETCH+DECODE word0 -> 0x41000000, need 1 more
+  TICK: 11980  | FETCH2                   | PC: 0110  | OP: JZ 0x014E           | R0: 00000000  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [41000000, 0000014E]  | ACT: FETCH word1 -> 0x0000014E, begin JZ 0x014E
+  TICK: 11981  | EXEC BRANCH              | PC: 014E  | OP: JZ 0x014E           | R0: 00000000  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: JZ taken -> 0x014E
+  TICK: 11982  | FETCH1                   | PC: 014F  | OP:                     | R0: 00000000  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000]            | ACT: FETCH+DECODE word0 -> 0x11000000, need 1 more
+  TICK: 11983  | FETCH2                   | PC: 0150  | OP: LOAD R0, #10        | R0: 00000000  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [11000000, 0000000A]  | ACT: FETCH word1 -> 0x0000000A, begin LOAD R0, #10
+  TICK: 11984  | EXEC LOAD_IMM            | PC: 0150  | OP: LOAD R0, #10        | R0: 0000000A  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: LOAD reg0, #10
+  TICK: 11985  | FETCH1                   | PC: 0151  | OP:                     | R0: 0000000A  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [61000000]            | ACT: FETCH+DECODE word0 -> 0x61000000, need 1 more
+  TICK: 11986  | FETCH2                   | PC: 0152  | OP: OUT port=0x01, R0   | R0: 0000000A  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [61000000, 00000001]  | ACT: FETCH word1 -> 0x00000001, begin OUT port=0x01, R0
+  TICK: 11987  | EXEC IO                  | PC: 0152  | OP: OUT port=0x01, R0   | R0: 0000000A  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: []                    | ACT: OUT port=0x01, reg0=0x0A
+  TICK: 11988  | FETCH1                   | PC: 0153  | OP: HALT                | R0: 0000000A  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [01000000]            | ACT: FETCH+DECODE word0 -> 0x01000000, begin HALT
+  TICK: 11989  | EXEC HALT                | PC: 0153  | OP: HALT                | R0: 0000000A  | R1: 00000704  | SP: 0F00  | MAR: 0500  | Z: 1  | N: 0  | I: 0  | IRQ: 0  | IR: [01000000]            | ACT: HALT
+stats:
+  instr_count: 4017
+  tick_count: 11989
