@@ -397,28 +397,20 @@ class ControlUnit:
                 if self.stream_remaining == 0:
                     self._stream_finalize_empty()
                 else:
-                    self.tick_action = (
-                        f"FETCH+DECODE word0 -> 0x{self.dp.ir0:08X}, stream {self.instr.mode} operands"
-                    )
+                    self.tick_action = f"FETCH+DECODE word0 -> 0x{self.dp.ir0:08X}, stream {self.instr.mode} operands"
                     self.state = "EXEC_STREAM"
             elif self.instr.n_words > 1:
-                self.tick_action = (
-                    f"FETCH+DECODE word0 -> 0x{self.dp.ir0:08X}," f" need {self.instr.n_words - 1} more"
-                )
+                self.tick_action = f"FETCH+DECODE word0 -> 0x{self.dp.ir0:08X}," f" need {self.instr.n_words - 1} more"
                 self.state = "FETCH_NEXT"
             else:
-                self.tick_action = (
-                    f"FETCH+DECODE word0 -> 0x{self.dp.ir0:08X}," f" begin {_mnemonic_for(self.instr)}"
-                )
+                self.tick_action = f"FETCH+DECODE word0 -> 0x{self.dp.ir0:08X}," f" begin {_mnemonic_for(self.instr)}"
                 self._begin_execute()
             return
         if s == "FETCH_NEXT":
             self.dp.ir1 = self.dp.signal_fetch_word()
             assert self.instr is not None
             self.instr = _decode_words([self.dp.ir0, self.dp.ir1])
-            self.tick_action = (
-                f"FETCH word1 -> 0x{self.dp.ir1:08X}, " f"begin {_mnemonic_for(self.instr)}"
-            )
+            self.tick_action = f"FETCH word1 -> 0x{self.dp.ir1:08X}, " f"begin {_mnemonic_for(self.instr)}"
             self._begin_execute()
             return
 
