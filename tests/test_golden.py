@@ -26,6 +26,8 @@ _LOG_INTR_HEAD = 30
 _LOG_INTR_WINDOW = 60
 _LOG_INTR_TAIL = 50
 
+LOG_MAX_CALL_LINES = 200
+
 
 class LiteralString(str):
     pass
@@ -47,8 +49,8 @@ def _quoted_representer(dumper: yaml.Dumper, data: QuotedString) -> yaml.ScalarN
     return dumper.represent_scalar("tag:yaml.org,2002:str", data, style='"')
 
 
-GoldenDumper.add_representer(LiteralString, _literal_representer)  # type: ignore[arg-type]
-GoldenDumper.add_representer(QuotedString, _quoted_representer)  # type: ignore[arg-type]
+GoldenDumper.add_representer(LiteralString, _literal_representer)
+GoldenDumper.add_representer(QuotedString, _quoted_representer)
 
 
 def _golden_files() -> list[Path]:
@@ -59,31 +61,50 @@ def _head(text: str, n_lines: int) -> str:
     return "\n".join(text.splitlines()[:n_lines])
 
 
+def _call_indices(log: list[str]) -> set[int]:
+    calls = {i for i, line in enumerate(log) if "CALL commit:" in line}
+    if len(calls) > LOG_MAX_CALL_LINES:
+        return set()
+    return calls
+
+
+def _assemble_log(log: list[str], keep: set[int]) -> str:
+    parts: list[str] = []
+    prev = -1
+    for i in sorted(keep):
+        if i > prev + 1:
+            parts.append(LOG_SKIP_MARKER)
+        parts.append(log[i])
+        prev = i
+    if -1 < prev < len(log) - 1:
+        parts.append(LOG_SKIP_MARKER)
+    return "\n".join(parts)
+
+
 def _representative_log(log: list[str]) -> str:
-    if len(log) <= LOG_HEAD_LINES + LOG_TAIL_LINES:
+    n = len(log)
+    if n <= LOG_HEAD_LINES + LOG_TAIL_LINES:
         return "\n".join(log)
+
+    keep_calls = _call_indices(log)
 
     int_indices = [i for i, line in enumerate(log) if "| INT " in line or "| INT_" in line]
     if int_indices and int_indices[0] >= _LOG_INTR_HEAD:
         win_start = max(_LOG_INTR_HEAD, int_indices[0] - 5)
-        win_end = min(len(log) - _LOG_INTR_TAIL, win_start + _LOG_INTR_WINDOW)
-        tail_start = len(log) - _LOG_INTR_TAIL
-        parts: list[str] = [*log[:_LOG_INTR_HEAD], LOG_SKIP_MARKER, *log[win_start:win_end]]
-        if win_end < tail_start:
-            parts += [LOG_SKIP_MARKER, *log[tail_start:]]
-        else:
-            parts += log[win_end:]
-        return "\n".join(parts)
+        win_end = min(n - _LOG_INTR_TAIL, win_start + _LOG_INTR_WINDOW)
+        keep = set(range(_LOG_INTR_HEAD)) | set(range(win_start, win_end)) | set(range(n - _LOG_INTR_TAIL, n))
+        return _assemble_log(log, keep | keep_calls)
 
-    return "\n".join([*log[:LOG_HEAD_LINES], LOG_SKIP_MARKER, *log[-LOG_TAIL_LINES:]])
+    keep = set(range(LOG_HEAD_LINES)) | set(range(n - LOG_TAIL_LINES, n))
+    return _assemble_log(log, keep | keep_calls)
 
 
 def _listing(instr_hex: str, data_hex: str, instr_lines: int, data_lines: int) -> str:
     instr_part = _head(instr_hex, instr_lines)
     data_part = _head(data_hex, data_lines)
-    if data_part:
+    if data_part.strip():
         return f"[.text]\n{instr_part}\n\n[.data]\n{data_part}"
-    return f"[.text]\n{instr_part}\n\n[.data]"
+    return f"[.text]\n{instr_part}"
 
 
 def _dump_golden(path: Path, spec: dict[str, object], actual: dict[str, object]) -> None:
@@ -101,7 +122,6 @@ def _dump_golden(path: Path, spec: dict[str, object], actual: dict[str, object])
         new_spec["input"] = spec["input"]
     if "max_ticks" in spec:
         new_spec["max_ticks"] = spec["max_ticks"]
-    new_spec["trace_mode"] = QuotedString(str(spec.get("trace_mode", "brief")))
 
     for key in (
         "instr_hex_head_lines",

@@ -404,7 +404,7 @@ class Compiler:
             raise CompileError("vsum requires at least one argument")
         if n > 255:
             raise CompileError("vsum supports at most 255 arguments")
-        word0 = encode_word0(Opcode.SUM_IMM, dst=Reg.R0, mode=n)
+        word0 = encode_word0(Opcode.VSUM_IMM, dst=Reg.R0, mode=n)
         self.instrs.append(word0)
         for value in node.values:
             self.instrs.append(to_unsigned32(value))
@@ -722,10 +722,17 @@ def write_instr_hex_dump(instrs: list[int], path: Path) -> None:
     n = len(instrs)
     while addr < n:
         word0 = instrs[addr]
-        n_words = instruction_word_count_from_word0(word0)
         if addr < INSTR_PROGRAM_START and word0 == 0:
             addr += 1
             continue
+        if word0 == 0:
+            start = addr
+            while addr < n and instrs[addr] == 0:
+                addr += 1
+            if addr - start >= 2:
+                continue
+            addr = start
+        n_words = instruction_word_count_from_word0(word0)
         instr = decode(instrs, addr)
         words_hex = " ".join(f"{w:08X}" for w in instr.raw_words)
         mn = mnemonic(instr)

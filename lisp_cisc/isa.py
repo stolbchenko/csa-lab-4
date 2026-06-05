@@ -39,7 +39,7 @@ class Opcode(IntEnum):
     OUT_PORT = 0x61
     EI = 0x70
     DI = 0x71
-    SUM_IMM = 0x80
+    VSUM_IMM = 0x80
     VMUL_IMM = 0x81
     VSUB_IMM = 0x82
 
@@ -82,7 +82,7 @@ INSTR_WORDS: dict[int, int] = {
 }
 
 
-VARARG_INSTRS: frozenset[int] = frozenset({Opcode.SUM_IMM, Opcode.VMUL_IMM, Opcode.VSUB_IMM})
+VARARG_INSTRS: frozenset[int] = frozenset({Opcode.VSUM_IMM, Opcode.VMUL_IMM, Opcode.VSUB_IMM})
 
 
 def instruction_word_count_from_word0(word0: int) -> int:
@@ -108,15 +108,6 @@ FLAG_NF = 1 << 1
 FLAG_IF = 1 << 2
 
 
-MODE_NONE = 0x00
-MODE_IMMEDIATE = 0x01
-MODE_INDIRECT = 0x02
-
-
-PORT_INPUT = 0x00
-PORT_OUTPUT = 0x01
-
-
 INSTR_PROGRAM_START = 0x0010
 INSTR_INTERRUPT_VECTOR_0 = 0x0002
 INSTR_INTERRUPT_HANDLER_BASE = 0x0E00
@@ -124,7 +115,6 @@ INSTR_INTERRUPT_HANDLER_BASE = 0x0E00
 DATA_LITERAL_BASE = 0x0000
 DATA_VARIABLE_BASE = 0x0400
 DATA_STACK_TOP = 0x0F00
-DATA_MEM_SIZE = 0x1000
 
 
 @dataclass(frozen=True)
@@ -252,7 +242,7 @@ def mnemonic(instr: DecodedInstr) -> str:
         return "EI"
     if op == Opcode.DI:
         return "DI"
-    if op == Opcode.SUM_IMM:
+    if op == Opcode.VSUM_IMM:
         values = ", ".join(str(to_signed32(w)) for w in instr.raw_words[1:])
         return f"SUM {dst_name}, n={instr.mode}; {values}"
     if op == Opcode.VMUL_IMM:

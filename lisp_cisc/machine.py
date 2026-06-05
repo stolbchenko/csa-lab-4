@@ -12,12 +12,20 @@ from lisp_cisc.isa import (
     FLAG_NF,
     FLAG_ZF,
     INSTR_INTERRUPT_VECTOR_0,
+    REG_NAMES,
+    VARARG_INSTRS,
     Opcode,
     Reg,
     instruction_word_count_from_word0,
     to_signed32,
     to_unsigned32,
 )
+
+_VARARG_NAMES: dict[int, str] = {
+    Opcode.VSUM_IMM: "SUM",
+    Opcode.VMUL_IMM: "MUL",
+    Opcode.VSUB_IMM: "SUB",
+}
 
 
 @dataclass
@@ -28,14 +36,12 @@ class IOController:
     input_ready: bool = False
     irq_pending: bool = False
     sched_index: int = 0
-    overrun_count: int = 0
 
     def tick_update(self, current_tick: int) -> list[str]:
         events: list[str] = []
         while self.sched_index < len(self.schedule) and self.schedule[self.sched_index][0] <= current_tick:
             _, ch = self.schedule[self.sched_index]
             if self.input_ready:
-                self.overrun_count += 1
                 events.append(f"INPUT overrun: unread 0x{self.input_port_value:02X} replaced by 0x{ord(ch):02X}")
             else:
                 events.append(f"INPUT ready: port 0x00 <- 0x{ord(ch):02X}")
@@ -74,8 +80,8 @@ class DataPath:
     r1: int = 0
     pc: int = 0
     sp: int = DATA_STACK_TOP
-    mar: int = 0
-    ir_words: list[int] = field(default_factory=list)
+    ir0: int = 0
+    ir1: int = 0
     flags: int = 0
 
     def get_reg(self, sel: int) -> int:
@@ -128,19 +134,20 @@ class DataPath:
     def get_if(self) -> bool:
         return bool(self.flags & FLAG_IF)
 
-    def signal_fetch_word(self) -> None:
+    def signal_fetch_word(self) -> int:
         word = self.instr_mem[self.pc] if self.pc < len(self.instr_mem) else 0
-        self.ir_words.append(to_unsigned32(word))
         self.pc = to_unsigned32(self.pc + 1)
+        return to_unsigned32(word)
 
     def reset_ir(self) -> None:
-        self.ir_words = []
+        self.ir0 = 0
+        self.ir1 = 0
 
-    def signal_data_read(self) -> int:
-        return self.data_mem[self.mar]
+    def signal_data_read(self, addr: int) -> int:
+        return self.data_mem[addr]
 
-    def signal_data_write(self, value: int) -> None:
-        self.data_mem[self.mar] = value & 0xFFFF_FFFF
+    def signal_data_write(self, addr: int, value: int) -> None:
+        self.data_mem[addr] = value & 0xFFFF_FFFF
 
     def signal_alu_add(self, lhs: int, rhs: int) -> int:
         result = to_unsigned32(to_signed32(lhs) + to_signed32(rhs))
@@ -193,17 +200,6 @@ class DataPath:
     def signal_alu_cmp(self, lhs: int, rhs: int) -> None:
         diff = to_unsigned32(to_signed32(lhs) - to_signed32(rhs))
         self.update_zn_flags(diff)
-
-    def signal_stack_push_value(self, value: int) -> None:
-        self.sp = to_unsigned32(self.sp - 1)
-        self.mar = self.sp
-        self.signal_data_write(value)
-
-    def signal_stack_pop(self) -> int:
-        self.mar = self.sp
-        result = self.signal_data_read()
-        self.sp = to_unsigned32(self.sp + 1)
-        return result
 
     def signal_io_in(self, port: int) -> int:
         return self.io.read_port(port)
@@ -284,8 +280,8 @@ class ControlUnit:
         self.in_interrupt = False
         self.halted = False
         self.log: list[_LogRecord] = []
-        self.int_step = 0
-        self.pop_value: int = 0
+        self.stream_remaining = 0
+        self.stream_index = 0
         self.tick_action: str = ""
         self.tick_phase: str = self.state
         self.io_events: list[str] = []
@@ -329,7 +325,6 @@ class ControlUnit:
         self.dp.reset_ir()
         self.instr = None
         self.in_interrupt = True
-        self.int_step = 0
         self.state = "INT_PUSH_R0"
         self.tick_phase = "INT_ACCEPT"
         self.tick_action = f"[INT] interrupt accepted: restart PC=0x{self.interrupt_return_pc:04X}"
@@ -337,7 +332,7 @@ class ControlUnit:
     def _log_tick(self) -> None:
         phase = self._format_phase()
         op = self._format_op()
-        ir = "[" + ", ".join(f"{w:08X}" for w in self.dp.ir_words) + "]"
+        ir = f"[{self.dp.ir0:08X}, {self.dp.ir1:08X}]"
         action_parts = []
         if self.io_events:
             action_parts.append("; ".join(self.io_events))
@@ -353,7 +348,6 @@ class ControlUnit:
                     f"R0: {self.dp.r0:08X}",
                     f"R1: {self.dp.r1:08X}",
                     f"SP: {self.dp.sp:04X}",
-                    f"MAR: {self.dp.mar:04X}",
                     f"Z: {int(self.dp.get_zf())}",
                     f"N: {int(self.dp.get_nf())}",
                     f"I: {int(self.dp.get_if())}",
@@ -381,7 +375,13 @@ class ControlUnit:
         return phase
 
     def _format_op(self) -> str:
-        if self.instr is None or len(self.instr.raw_words) < self.instr.n_words:
+        if self.instr is None:
+            return ""
+        if self.instr.opcode in VARARG_INSTRS:
+            name = _VARARG_NAMES[Opcode(self.instr.opcode)]
+            dst_name = REG_NAMES.get(self.instr.dst, f"R?{self.instr.dst}")
+            return f"{name} {dst_name}, n={self.instr.mode}"
+        if len(self.instr.raw_words) < self.instr.n_words:
             return ""
         return _mnemonic_for(self.instr)
 
@@ -389,32 +389,37 @@ class ControlUnit:
         s = self.state
         if s == "FETCH_W0":
             self.dp.reset_ir()
-            self.dp.signal_fetch_word()
-            self.instr = _decode_words(self.dp.ir_words)
-            if self.instr.n_words > 1:
+            self.dp.ir0 = self.dp.signal_fetch_word()
+            self.instr = _decode_words([self.dp.ir0])
+            if self.instr.opcode in VARARG_INSTRS:
+                self.stream_remaining = self.instr.mode
+                self.stream_index = 0
+                if self.stream_remaining == 0:
+                    self._stream_finalize_empty()
+                else:
+                    self.tick_action = (
+                        f"FETCH+DECODE word0 -> 0x{self.dp.ir0:08X}, stream {self.instr.mode} operands"
+                    )
+                    self.state = "EXEC_STREAM"
+            elif self.instr.n_words > 1:
                 self.tick_action = (
-                    f"FETCH+DECODE word0 -> 0x{self.dp.ir_words[0]:08X}," f" need {self.instr.n_words - 1} more"
+                    f"FETCH+DECODE word0 -> 0x{self.dp.ir0:08X}," f" need {self.instr.n_words - 1} more"
                 )
                 self.state = "FETCH_NEXT"
             else:
                 self.tick_action = (
-                    f"FETCH+DECODE word0 -> 0x{self.dp.ir_words[0]:08X}," f" begin {_mnemonic_for(self.instr)}"
+                    f"FETCH+DECODE word0 -> 0x{self.dp.ir0:08X}," f" begin {_mnemonic_for(self.instr)}"
                 )
                 self._begin_execute()
             return
         if s == "FETCH_NEXT":
-            self.dp.signal_fetch_word()
+            self.dp.ir1 = self.dp.signal_fetch_word()
             assert self.instr is not None
-            self.instr = _decode_words(self.dp.ir_words)
-            got = len(self.dp.ir_words)
-            needed = self.instr.n_words
-            if got < needed:
-                self.tick_action = f"FETCH word{got - 1} -> 0x{self.dp.ir_words[-1]:08X}, need {needed - got} more"
-            else:
-                self.tick_action = (
-                    f"FETCH word{got - 1} -> 0x{self.dp.ir_words[-1]:08X}, " f"begin {_mnemonic_for(self.instr)}"
-                )
-                self._begin_execute()
+            self.instr = _decode_words([self.dp.ir0, self.dp.ir1])
+            self.tick_action = (
+                f"FETCH word1 -> 0x{self.dp.ir1:08X}, " f"begin {_mnemonic_for(self.instr)}"
+            )
+            self._begin_execute()
             return
 
         if s == "EXEC_LOAD_IMM":
@@ -457,12 +462,8 @@ class ControlUnit:
             self._exec_iret_pop_r1()
         elif s == "EXEC_IRET_POP_R0":
             self._exec_iret_pop_r0()
-        elif s == "EXEC_SUM_IMM":
-            self._exec_sum_imm()
-        elif s == "EXEC_VMUL_IMM":
-            self._exec_vmul_imm()
-        elif s == "EXEC_VSUB_IMM":
-            self._exec_vsub_imm()
+        elif s == "EXEC_STREAM":
+            self._exec_stream()
         elif s == "EXEC_IO":
             self._exec_io()
         elif s == "EXEC_EI":
@@ -533,12 +534,6 @@ class ControlUnit:
             self.state = "EXEC_BRANCH"
         elif op in (Opcode.IN_PORT, Opcode.OUT_PORT):
             self.state = "EXEC_IO"
-        elif op == Opcode.SUM_IMM:
-            self.state = "EXEC_SUM_IMM"
-        elif op == Opcode.VMUL_IMM:
-            self.state = "EXEC_VMUL_IMM"
-        elif op == Opcode.VSUB_IMM:
-            self.state = "EXEC_VSUB_IMM"
         else:
             raise RuntimeError(f"Unknown opcode 0x{op:02X}")
 
@@ -550,18 +545,18 @@ class ControlUnit:
 
     def _exec_load_mem(self) -> None:
         assert self.instr is not None
-        self.dp.mar = to_unsigned32(self.instr.operand)
-        result = self.dp.signal_data_read()
+        addr = to_unsigned32(self.instr.operand)
+        result = self.dp.signal_data_read(addr)
         self.dp.set_reg(self.instr.dst, result)
-        self.tick_action = f"LOAD reg{self.instr.dst}, [0x{self.dp.mar:04X}]"
+        self.tick_action = f"LOAD reg{self.instr.dst}, [0x{addr:04X}]"
         self._finalize()
 
     def _exec_store_mem(self) -> None:
         assert self.instr is not None
-        self.dp.mar = to_unsigned32(self.instr.operand)
+        addr = to_unsigned32(self.instr.operand)
         value = self.dp.get_reg(self.instr.src)
-        self.dp.signal_data_write(value)
-        self.tick_action = f"STORE [0x{self.dp.mar:04X}], reg{self.instr.src}=0x{value:08X}"
+        self.dp.signal_data_write(addr, value)
+        self.tick_action = f"STORE [0x{addr:04X}], reg{self.instr.src}=0x{value:08X}"
         self._finalize()
 
     def _exec_move_reg(self) -> None:
@@ -573,18 +568,18 @@ class ControlUnit:
 
     def _exec_load_ind(self) -> None:
         assert self.instr is not None
-        self.dp.mar = self.dp.get_reg(self.instr.src)
-        result = self.dp.signal_data_read()
+        addr = self.dp.get_reg(self.instr.src)
+        result = self.dp.signal_data_read(addr)
         self.dp.set_reg(self.instr.dst, result)
-        self.tick_action = f"LOAD reg{self.instr.dst}, [reg{self.instr.src}]=0x{self.dp.mar:04X}"
+        self.tick_action = f"LOAD reg{self.instr.dst}, [reg{self.instr.src}]=0x{addr:04X}"
         self._finalize()
 
     def _exec_store_ind(self) -> None:
         assert self.instr is not None
-        self.dp.mar = self.dp.get_reg(self.instr.dst)
+        addr = self.dp.get_reg(self.instr.dst)
         value = self.dp.get_reg(self.instr.src)
-        self.dp.signal_data_write(value)
-        self.tick_action = f"STORE [reg{self.instr.dst}]=0x{self.dp.mar:04X}, reg{self.instr.src}=0x{value:08X}"
+        self.dp.signal_data_write(addr, value)
+        self.tick_action = f"STORE [reg{self.instr.dst}]=0x{addr:04X}, reg{self.instr.src}=0x{value:08X}"
         self._finalize()
 
     def _exec_add_reg(self) -> None:
@@ -613,8 +608,8 @@ class ControlUnit:
 
     def _exec_alu_mem(self) -> None:
         assert self.instr is not None
-        self.dp.mar = to_unsigned32(self.instr.operand)
-        result = self.dp.signal_data_read()
+        addr = to_unsigned32(self.instr.operand)
+        result = self.dp.signal_data_read(addr)
         lhs = self.dp.get_reg(self.instr.dst)
         op = self.instr.opcode
         op_name = Opcode(self.instr.opcode).name
@@ -634,25 +629,24 @@ class ControlUnit:
             self.dp.set_reg(self.instr.dst, self.dp.signal_alu_and(lhs, result))
         elif op == Opcode.OR_MEM:
             self.dp.set_reg(self.instr.dst, self.dp.signal_alu_or(lhs, result))
-        self.tick_action = f"{op_name} reg{self.instr.dst}, [0x{self.dp.mar:04X}]"
+        self.tick_action = f"{op_name} reg{self.instr.dst}, [0x{addr:04X}]"
         self._finalize()
 
     def _exec_push(self) -> None:
         assert self.instr is not None
         value = self.dp.get_reg(self.instr.src)
         self.dp.sp = to_unsigned32(self.dp.sp - 1)
-        self.dp.mar = self.dp.sp
-        self.dp.signal_data_write(value)
+        self.dp.signal_data_write(self.dp.sp, value)
         self.tick_action = f"PUSH reg{self.instr.src}=0x{value:08X} -> [0x{self.dp.sp:04X}]"
         self._finalize()
 
     def _exec_pop(self) -> None:
         assert self.instr is not None
-        self.dp.mar = self.dp.sp
-        result = self.dp.signal_data_read()
+        addr = self.dp.sp
+        result = self.dp.signal_data_read(addr)
         self.dp.set_reg(self.instr.dst, result)
         self.dp.sp = to_unsigned32(self.dp.sp + 1)
-        self.tick_action = f"POP reg{self.instr.dst} <- [0x{self.dp.mar:04X}]"
+        self.tick_action = f"POP reg{self.instr.dst} <- [0x{addr:04X}]"
         self._finalize()
 
     def _exec_jmp(self) -> None:
@@ -688,8 +682,7 @@ class ControlUnit:
         assert self.instr is not None
         return_pc = self.dp.pc
         self.dp.sp = to_unsigned32(self.dp.sp - 1)
-        self.dp.mar = self.dp.sp
-        self.dp.signal_data_write(return_pc)
+        self.dp.signal_data_write(self.dp.sp, return_pc)
         self.dp.pc = to_unsigned32(self.instr.operand)
         self.tick_action = (
             f"CALL commit: push PC=0x{return_pc:04X} -> [0x{self.dp.sp:04X}], " f"jump -> 0x{self.dp.pc:04X}"
@@ -697,34 +690,34 @@ class ControlUnit:
         self._finalize()
 
     def _exec_ret(self) -> None:
-        self.dp.mar = self.dp.sp
-        result = self.dp.signal_data_read()
+        addr = self.dp.sp
+        result = self.dp.signal_data_read(addr)
         self.dp.pc = to_unsigned32(result)
         self.dp.sp = to_unsigned32(self.dp.sp + 1)
-        self.tick_action = f"RET pop PC <- [0x{self.dp.mar:04X}]"
+        self.tick_action = f"RET pop PC <- [0x{addr:04X}]"
         self._finalize()
 
     def _exec_iret_pop_flags(self) -> None:
-        self.dp.mar = self.dp.sp
-        self.iret_flags_value = self.dp.signal_data_read() & 0xFF
-        self.tick_action = f"IRET read FLAGS <- [0x{self.dp.mar:04X}]"
+        addr = self.dp.sp
+        self.iret_flags_value = self.dp.signal_data_read(addr) & 0xFF
+        self.tick_action = f"IRET read FLAGS <- [0x{addr:04X}]"
         self.state = "EXEC_IRET_POP_PC"
 
     def _exec_iret_pop_pc(self) -> None:
-        self.dp.mar = to_unsigned32(self.dp.sp + 1)
-        self.iret_pc_value = to_unsigned32(self.dp.signal_data_read())
-        self.tick_action = f"IRET read PC <- [0x{self.dp.mar:04X}]"
+        addr = to_unsigned32(self.dp.sp + 1)
+        self.iret_pc_value = to_unsigned32(self.dp.signal_data_read(addr))
+        self.tick_action = f"IRET read PC <- [0x{addr:04X}]"
         self.state = "EXEC_IRET_POP_R1"
 
     def _exec_iret_pop_r1(self) -> None:
-        self.dp.mar = to_unsigned32(self.dp.sp + 2)
-        self.iret_r1_value = to_unsigned32(self.dp.signal_data_read())
-        self.tick_action = f"IRET read R1 <- [0x{self.dp.mar:04X}]"
+        addr = to_unsigned32(self.dp.sp + 2)
+        self.iret_r1_value = to_unsigned32(self.dp.signal_data_read(addr))
+        self.tick_action = f"IRET read R1 <- [0x{addr:04X}]"
         self.state = "EXEC_IRET_POP_R0"
 
     def _exec_iret_pop_r0(self) -> None:
-        self.dp.mar = to_unsigned32(self.dp.sp + 3)
-        r0_value = to_unsigned32(self.dp.signal_data_read())
+        addr = to_unsigned32(self.dp.sp + 3)
+        r0_value = to_unsigned32(self.dp.signal_data_read(addr))
         old_sp = self.dp.sp
         self.dp.flags = self.iret_flags_value
         self.dp.pc = self.iret_pc_value
@@ -739,38 +732,44 @@ class ControlUnit:
         self.in_interrupt = False
         self._finalize()
 
-    def _exec_sum_imm(self) -> None:
+    def _exec_stream(self) -> None:
         assert self.instr is not None
-        n = self.instr.mode
-        values = [to_signed32(self.dp.ir_words[i + 1] & 0xFFFF_FFFF) for i in range(n)]
-        result = sum(values)
-        self.dp.set_reg(self.instr.dst, to_unsigned32(result))
-        self.dp.update_zn_flags(to_unsigned32(result))
-        self.tick_action = f"SUM reg{self.instr.dst} values={values} -> {result}"
-        self._finalize()
+        self.dp.ir1 = self.dp.signal_fetch_word()
+        operand = to_signed32(self.dp.ir1)
+        op = self.instr.opcode
+        dst = self.instr.dst
+        if self.stream_index == 0:
+            acc = operand
+        else:
+            cur = to_signed32(self.dp.get_reg(dst))
+            if op == Opcode.VSUM_IMM:
+                acc = cur + operand
+            elif op == Opcode.VMUL_IMM:
+                acc = cur * operand
+            else:
+                acc = cur - operand
+        self.dp.set_reg(dst, to_unsigned32(acc))
+        self.dp.update_zn_flags(to_unsigned32(acc))
+        self.stream_index += 1
+        self.stream_remaining -= 1
+        name = _VARARG_NAMES[Opcode(op)]
+        suffix = f"need {self.stream_remaining} more" if self.stream_remaining > 0 else "done"
+        self.tick_action = (
+            f"{name} stream op#{self.stream_index}={operand} -> reg{dst}=0x{to_unsigned32(acc):08X} ({suffix})"
+        )
+        if self.stream_remaining > 0:
+            self.state = "EXEC_STREAM"
+        else:
+            self._finalize()
 
-    def _exec_vmul_imm(self) -> None:
+    def _stream_finalize_empty(self) -> None:
         assert self.instr is not None
-        n = self.instr.mode
-        values = [to_signed32(self.dp.ir_words[i + 1] & 0xFFFF_FFFF) for i in range(n)]
-        result = 1
-        for v in values:
-            result *= v
-        self.dp.set_reg(self.instr.dst, to_unsigned32(result))
-        self.dp.update_zn_flags(to_unsigned32(result))
-        self.tick_action = f"MUL reg{self.instr.dst} values={values} -> {result}"
-        self._finalize()
-
-    def _exec_vsub_imm(self) -> None:
-        assert self.instr is not None
-        n = self.instr.mode
-        values = [to_signed32(self.dp.ir_words[i + 1] & 0xFFFF_FFFF) for i in range(n)]
-        result = values[0]
-        for v in values[1:]:
-            result -= v
-        self.dp.set_reg(self.instr.dst, to_unsigned32(result))
-        self.dp.update_zn_flags(to_unsigned32(result))
-        self.tick_action = f"SUB reg{self.instr.dst} values={values} -> {result}"
+        op = self.instr.opcode
+        acc = 1 if op == Opcode.VMUL_IMM else 0
+        self.dp.set_reg(self.instr.dst, to_unsigned32(acc))
+        self.dp.update_zn_flags(to_unsigned32(acc))
+        name = _VARARG_NAMES[Opcode(op)]
+        self.tick_action = f"{name} reg{self.instr.dst} (no operands) -> {acc}"
         self._finalize()
 
     def _exec_io(self) -> None:
@@ -789,30 +788,26 @@ class ControlUnit:
         self._finalize()
 
     def _int_push_r0(self) -> None:
-        self.dp.mar = to_unsigned32(self.dp.sp - 1)
-        self.dp.sp = self.dp.mar
-        self.dp.signal_data_write(self.dp.r0)
+        self.dp.sp = to_unsigned32(self.dp.sp - 1)
+        self.dp.signal_data_write(self.dp.sp, self.dp.r0)
         self.tick_action = f"[INT] push R0=0x{self.dp.r0:08X}"
         self.state = "INT_PUSH_R1"
 
     def _int_push_r1(self) -> None:
-        self.dp.mar = to_unsigned32(self.dp.sp - 1)
-        self.dp.sp = self.dp.mar
-        self.dp.signal_data_write(self.dp.r1)
+        self.dp.sp = to_unsigned32(self.dp.sp - 1)
+        self.dp.signal_data_write(self.dp.sp, self.dp.r1)
         self.tick_action = f"[INT] push R1=0x{self.dp.r1:08X}"
         self.state = "INT_PUSH_PC"
 
     def _int_push_pc(self) -> None:
-        self.dp.mar = to_unsigned32(self.dp.sp - 1)
-        self.dp.sp = self.dp.mar
-        self.dp.signal_data_write(self.interrupt_return_pc)
+        self.dp.sp = to_unsigned32(self.dp.sp - 1)
+        self.dp.signal_data_write(self.dp.sp, self.interrupt_return_pc)
         self.tick_action = f"[INT] push restart PC=0x{self.interrupt_return_pc:04X}"
         self.state = "INT_PUSH_FLAGS"
 
     def _int_push_flags(self) -> None:
-        self.dp.mar = to_unsigned32(self.dp.sp - 1)
-        self.dp.sp = self.dp.mar
-        self.dp.signal_data_write(self.dp.flags)
+        self.dp.sp = to_unsigned32(self.dp.sp - 1)
+        self.dp.signal_data_write(self.dp.sp, self.dp.flags)
         self.tick_action = f"[INT] push FLAGS=0x{self.dp.flags:02X}"
         self.dp.set_if(False)
         self.state = "INT_LOAD_VECTOR"
