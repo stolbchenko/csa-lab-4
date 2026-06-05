@@ -41,11 +41,11 @@ class GoldenDumper(yaml.SafeDumper):
     pass
 
 
-def _literal_representer(dumper: yaml.Dumper, data: LiteralString) -> yaml.ScalarNode:
+def _literal_representer(dumper: GoldenDumper, data: LiteralString) -> yaml.Node:
     return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
 
 
-def _quoted_representer(dumper: yaml.Dumper, data: QuotedString) -> yaml.ScalarNode:
+def _quoted_representer(dumper: GoldenDumper, data: QuotedString) -> yaml.Node:
     return dumper.represent_scalar("tag:yaml.org,2002:str", data, style='"')
 
 
