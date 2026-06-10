@@ -521,7 +521,7 @@ INPUT ready: port 0x00 <- 0x68 | IN port=0x00 -> reg0=0x68
 
 ### DataPath
 
-![DataPath](static/DataPath.jpg)
+![DataPath](static/DP.jpg)
 
 
 
@@ -529,7 +529,7 @@ INPUT ready: port 0x00 <- 0x68 | IN port=0x00 -> reg0=0x68
 
 ### ControlUnit
 
-![ControlUnit](static/ControlUnit.png)
+![ControlUnit](static/CU.jpg)
 
 
 ---
